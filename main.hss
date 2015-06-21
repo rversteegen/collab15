@@ -1,0 +1,297 @@
+include, misc.hss
+
+global variable, begin
+
+    1, activemenu  # a lookup code, or 0 for none
+
+    # Wind speed in pixels/sec
+    # must be between 
+    40, wind_vx
+    41, wind_vy
+
+    50, mousecursor
+    51, lastmousex  #pixels
+    52, lastmousey
+
+    # for misc.hss
+    99, last diverse random offset
+
+    # slice layers
+    100, smokelayer
+
+    # data
+    200, chimneyList
+
+    # player 0 (the player)
+    300, playerGold
+    301, playerCoal
+    302, playerMatter
+
+    # player 1 (the opponent)
+end
+
+define constant, begin
+    18, TICKS_PER_SEC
+
+end
+
+
+
+################################ Chimneys #####################################
+
+define constant, begin
+    # slice extra data
+    0, chimney:puffsPerSec
+    1, chimney:ticksTillPuff
+
+    # slice extra data
+    0, smoke:age
+end
+
+# Register a smoke-spewing chimney.
+# x,y in pixels
+# puffsPerSec sets how much to spew
+script, addChimney, x, y, puffsPerSec, begin
+    variable(sl)
+    sl := createcontainer
+    setparent(sl, chimneyList)
+    putslice(sl, x, y)
+    setsliceextra(sl, chimney:puffsPerSec, puffsPerSec)
+    setsliceextra(sl, chimney:ticksTillPuff, 1)
+end
+
+# Given a velocity or something else measured in pixels/items per sec, randomly pick
+# number of pixels/items this tick so that average is correct
+script, randomPerSec, persec, begin
+    variable(sgn)
+    sgn := sign(persec)
+    persec := abs(persec)
+    if (persec <= TICKS_PER_SEC) then (
+        # Return 0 or 1
+        return (sgn * (random(1, TICKS_PER_SEC) <= persec))
+    ) else (
+        # Return 0 to double expected
+        return (sgn * random(0, 2 * persec) / TICKS_PER_SEC)
+    )
+end
+
+script, updateSmoke, begin
+    variable(sl, next)
+
+    variable(maxage)
+    maxage := TICKS_PER_SEC * 9   # lifetime of a smoke puff
+
+    #### Update existing smoke
+    sl := firstchild(smokelayer)
+    while (sl) do (
+        next := nextsibling(sl)
+        variable(age, x, y)
+        age := getsliceextra(sl, smoke:age) + 1
+        if (age >= maxage) then (freeslice(sl))
+        else (
+            setspriteframe(sl, 8 * age / maxage)
+            x := slicex(sl)
+            y := slicey(sl) -- randomPerSec(10)  # rising speed
+            putslice(sl, x + randomPerSec(wind_vx), y + randomPerSec(wind_vy))
+            setsliceextra(sl, smoke:age, age)
+        )
+        sl := next
+    )
+
+
+    #### Generate new smoke
+    sl := firstchild(chimneyList)
+    while (sl) do (
+        variable(persec, tillnext, smoke)
+        persec := getsliceextra(sl, chimney:puffsPerSec)
+        tillnext := getsliceextra(sl, chimney:ticksTillPuff) -- 1
+        if (tillnext <= 0) then (
+            smoke := loadwalkaboutsprite(1)
+            setparent(smoke, smokelayer)
+            putslice(smoke, slicex(sl), slicey(sl))
+            centerslice(smoke)  # the sprite is centred
+            setsliceextra(smoke, smoke:age, 0)
+            tillnext := random(0, TICKS_PER_SEC * 2) / persec
+        )
+        setsliceextra(sl, chimney:ticksTillPuff, tillnext)
+        
+        sl := nextsibling(sl)
+    )
+end
+
+
+################################## NPCS #######################################
+
+
+script, showtext, boxnum, begin
+    showtextbox(boxnum)
+
+end
+
+############################### Main loop #####################################
+
+script, settooltip, stringid, begin
+    variable(sl)
+    sl := lookupslice(sli:tooltip, mousecursor)
+    setslicevisible(sl, true)
+    setslicetext(sl, stringid)
+    putslice(sl, 0, 0)   # Reset position
+    clampslice(sl, spritelayer)  # This forces the whole tooltip to appear on-screen
+end
+
+# Is the mouse over this?
+script, mouseIsOver, lookupcode, begin
+    variable(sl)
+    sl := lookupslice(lookupcode)
+    if (sl) then (
+        return (slicecollidepoint(sl, mousepixelx, mousepixely))
+    )
+end
+
+script, activateMenu, lookupcode, begin
+    closeActiveMenu
+    variable(sl)
+    sl := lookupslice(lookupcode)
+    if (sl) then (
+        setslicevisible(sl, true)
+        activemenu := lookupcode
+    )
+end
+
+script, closeActiveMenu, begin
+    if (activemenu) then (
+        setslicevisible(lookupslice(activemenu), false)
+    )
+    activemenu := 0
+end
+
+script, controls, begin
+    if (checktag(tag:wantreset)) then (resetgame)
+
+    if (mousebutton(leftbutton) && not(mouseclick(leftbutton))) then (
+        # dragging the mouse
+        putcamera(camerapixelx -- (mousepixelx -- lastmousex), camerapixely -- (mousepixely -- lastmousey))
+        exitscript
+    )
+
+    if (currenttextbox >= 0) then (
+        if (mouseclick(leftbutton)) then (
+            advancetextbox
+        )
+        exitscript
+    ) else if (active menu == sli:menu:menu) then (
+        if (mouseclick(leftbutton)) then (
+            if (mouseIsOver(sli:button:quit)) then (
+                gameover
+            ) else (
+                # clicking elsewhere closes the menu
+                closeActiveMenu
+            )
+        )
+        #
+        exitscript
+    )
+
+    
+
+
+    #### Mouse over
+    variable(tilex, tiley)
+    tilex := (mousepixelx + camerapixelx) / 20
+    tiley := (mousepixely + camerapixely) / 20
+
+    settooltip($0="")
+    showvalue(0)
+
+    if (mouseIsOver(sli:playergold)) then (
+        settooltip($0="Money")
+    ) else if (mouseIsOver(sli:playeriron)) then (
+        settooltip($0="Materials")
+    ) else if (mouseIsOver(sli:playercoal)) then (
+        settooltip($0="Coal")
+    ) else if (mouseIsOver(sli:button:menu)) then (
+        showvalue(1)
+        if (mouseclick(leftbutton)) then (
+            activateMenu(sli:menu:menu)
+        )
+    ) else if (readmapblock(tilex, tiley, 1) == 37) then (
+        settooltip($0="Manufactory")
+        if (mouseclick(leftbutton)) then (
+            showtext(1)
+        )
+    )
+end
+
+script, updateGUI, begin
+    stringsprintf(0, $1="  %d", playerGold)
+    setslicetext(lookupslice(sli:playergold), 0)
+    stringsprintf(0, $1="  %d", playerMatter)
+    setslicetext(lookupslice(sli:playeriron), 0)
+    stringsprintf(0, $1="  %d", playerCoal)
+    setslicetext(lookupslice(sli:playercoal), 0)
+end
+
+script, mainloop, begin
+    put slice (mousecursor, mouse pixel x, mouse pixel y)
+
+    controls
+    lastmousex := mousepixelx
+    lastmousey := mousepixely
+
+    updateSmoke
+    updateGUI
+
+    wind_vx := bound(wind_vx + random(-1,1), -20, 20)
+    wind_vy := bound(wind_vy + random(-1,1), -15, 15)
+
+end
+
+
+# newgame and load-game
+script, init, begin
+    suspendboxadvance
+    # textbox backdrop above the box, like a portrait
+    movesliceabove(lookupslice(sl:backdrop), lookupslice(sl:textbox layer))
+
+    initmouse
+    variable(cont)
+    cont := loadslicecollection(1)
+    mousecursor := firstchild(cont)
+    movesliceabove(mousecursor, lookupslice(sl:backdrop))
+    freeslice(cont)
+
+    loadslicecollection(0)
+
+    #### Data structures
+    smokelayer := createcontainer
+    setparent(smokelayer, lookupslice(sl:maplayer1))
+    chimneyList := createcontainer
+    setslicevisible(chimneyList, false)
+
+
+    #### Setup map
+    addChimney(5*20 + 5, 11*20, 10)
+    addChimney(12*20 + 5, 12*20, 2)
+    addChimney(7*20 + 5, 5*20, 4)
+
+    wind_vx := 17
+    wind_vy := 4
+
+    #### Setup players
+
+    playerGold := 50
+    playerCoal := 30
+    playerMatter := 30
+
+end
+
+
+plotscript, newgame, begin
+    init
+
+    while (true) do (
+        # A separate script, so that scripts can be reloaded without problems.
+        mainloop
+        wait
+    )
+end

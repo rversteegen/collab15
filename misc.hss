@@ -1,0 +1,291 @@
+script, loadsprite, hsd:size, hsd:number, hsd:pal = -1, begin
+  if(hsd:size == spritetype:walkabout) then(return(load walkabout sprite(hsd:number, hsd:pal)))
+  if(hsd:size == spritetype:hero) then(return(load hero sprite(hsd:number, hsd:pal)))
+  if(hsd:size == spritetype:smallenemy) then(return(load small enemy sprite(hsd:number, hsd:pal)))
+  if(hsd:size == spritetype:mediumenemy) then(return(load medium enemy sprite(hsd:number, hsd:pal)))
+  if(hsd:size == spritetype:largeenemy) then(return(load large enemy sprite(hsd:number, hsd:pal)))
+  if(hsd:size == spritetype:weapon) then(return(load weapon sprite(hsd:number, hsd:pal)))
+end
+
+script, replacesprite, hsd:sprite, hsd:size, hsd:number, hsd:pal = -1, begin
+  if(hsd:size == spritetype:walkabout) then(return(replace walkabout sprite(hsd:sprite, hsd:number, hsd:pal)))
+  if(hsd:size == spritetype:hero) then(return(replace hero sprite(hsd:sprite, hsd:number, hsd:pal)))
+  if(hsd:size == spritetype:smallenemy) then(return(replace small enemy sprite(hsd:sprite, hsd:number, hsd:pal)))
+  if(hsd:size == spritetype:mediumenemy) then(return(replace medium enemy sprite(hsd:sprite, hsd:number, hsd:pal)))
+  if(hsd:size == spritetype:largeenemy) then(return(replace large enemy sprite(hsd:sprite, hsd:number, hsd:pal)))
+  if(hsd:size == spritetype:weapon) then(return(replace weapon sprite(hsd:sprite, hsd:number, hsd:pal)))
+end
+
+# A totally black 16 colour palette
+defineconstant(23, BLACK_PALETTE)
+
+# Loads 5 copies of a sprite, 4 have black palettes to create an outline effect.
+# The bottom-most black copy is the parent of the other 4 slices.
+script, load_outlined_sprite, spritetype, spriteset, pal = -1, begin
+    subscript, addsprite, x, y, palette, begin
+variable(sl)
+        sl := loadsprite(spritetype, spriteset, palette)
+        putslice(sl, x, y)
+        setparent(sl, ret)
+    end
+
+variable(ret)
+    ret := loadsprite(spritetype, spriteset, BLACK_PALETTE)  # 0,1 offset to central
+    addsprite(-1, 1, BLACK_PALETTE)
+    addsprite(1, 1, BLACK_PALETTE)
+    addsprite(0, 2, BLACK_PALETTE)
+    addsprite(0, 1, pal)
+    return(ret)
+end
+
+script, pass ()
+
+script, use_keypress, begin
+    return(keyval(key:enter) > 1 || keyval(key:space) > 1 || keyval(key:ctrl) > 1 || keyval(key:Filtered Alt) > 1)
+end
+
+script, esc_keypress, begin
+    return(keyval(key:esc) > 1 || keyval(key:alt) > 1)
+end
+
+script, skippablewait, ticks, begin
+    variable (i)
+    for (i, 1, ticks) do (
+        if (esc_keypress || use_keypress) then (break)
+        wait
+    )
+end
+
+script, fademusicout, ticks, begin
+    # The music fades break on Windows with music_sdl, so disable them...
+    stopsong
+    exitscript
+
+variable(i)
+    for(i, 1, ticks) do (
+        setmusicvolume((ticks -- i) * 255 / ticks)
+        wait(1)
+    )
+    setmusicvolume(255)
+    stopsong
+    wait
+    setmusicvolume(255)
+end
+
+script, reduce, n, amount, begin
+    if (n << 0) then (
+        n += amount
+        if (n >> 0) then (n := 0)
+    ) else (
+        n -= amount
+        if (n << 0) then (n := 0)
+    )
+    return (n)
+)
+
+script, bound, n, low, high, begin
+    if (n << low) then (exit returning (low))
+    if (n >> high) then (exit returning (high))
+    return (n)
+)
+
+script, small, n1, n2, begin
+    if (n1 << n2) then (return (n1)) else (return (n2))
+end
+
+script, large, n1, n2, begin
+    if (n1 >> n2) then (return (n1)) else (return (n2))
+end
+
+script, min, n1, n2, begin
+    if (n1 << n2) then (return (n1)) else (return (n2))
+end
+
+script, max, n1, n2, begin
+    if (n1 >> n2) then (return (n1)) else (return (n2))
+end
+
+# return the distance of a point in the specified direction from the origin
+script, directional distance, x, y, dir, begin
+    switch (dir) do (
+    case (up) do (return (0 -- y))
+    case (right) do (return (x))
+    case (down) do (return (y))
+    case (left) do (return (0 -- x))
+    )
+end
+
+
+script, dirX, dir, begin
+    switch (dir) do (
+    case (up, down) do (return (0))
+    case (right) do (return (1))
+    case (left) do (return (-1))
+    )
+end
+
+script, dirY, dir, begin
+    switch (dir) do (
+    case (left, right) do (return (0))
+    case (down) do (return (1))
+    case (up) do (return (-1))
+    )
+end
+
+
+# Returns string of the script call stack in the "string" va
+script, callstack, string, begin
+variable(depth, id)
+    depth := 1
+    $ string = ""
+    while (true) do (
+        id := getcallingscriptid(depth)
+        if (id == 0) then (break)
+        if (depth == 1) then (
+            getscriptname(string, id)
+        ) else (
+            getscriptname(98, id)
+            stringsprintf(string, $99="%s -> %s", 98, string)
+        )
+        depth += 1
+    )
+    return(string)
+end
+
+# Like random, but when called with the same range multiple times in a row,
+# avoids returning a value close to the last one (within 1/5 of the range).
+script, diverserandom, low, high, begin
+    variable (ret, offset, range)
+    range := high -- low + 1
+    offset := last diverse random offset + range/5 + random(0, range * 3 / 5)
+    ret := low + (offset, mod, range)
+    last diverse random offset := offset
+    return (ret)
+end
+
+# Approximation of a normally distributed variable, sigma == s.d.
+script, normalvar, mu, sigma, begin
+    variable (i, sum)
+    # Add together k uniform values. Better for higher k
+    # This gives the correct mean, but the variance is too high when sigma
+    # is small, so compensate
+    # (As k increases variance goes up. k=10 gives close to correct for all large sigma)
+    if (sigma <= 4) then (exit returning(mu + normalvar(0, sigma * 10) / 10))
+
+    for (i, 1, 10) do (sum += random(0, sigma))
+    return (mu + sum -- 5 * sigma)
+end
+
+script, d100, percent, begin
+    return (random(0, 100) << percent)
+end
+
+script, RectangleCollision, x1,y1,w1,h1, x2,y2,w2,h2,begin
+    if (x1  + w1 >= x2
+            && x1 <= x2 + w2
+            && y1 + h1 >= y2
+            && y1 <= y2 + h2) then
+                    ( return (True) )
+    else ( return (False) ) 
+end
+
+# Returns e^(n/1000) * 1000
+# Always positive.
+script, exp1000, n, begin
+    # For n > 0, max deviation is 0.3%
+    if (n >= 7291) then (
+        if (n >= 14579) then (
+            # Prevent overflow
+            exitreturning(2145750645)
+        )
+        # exp(7.291) = 1467.04
+        return(exp1000(n -- 7291) * 1467)
+    )
+    variable(mult, val)
+    mult := 1000
+    while (n <= -414) do (
+        # exp(-0.414) = 0.661001
+        mult := mult * 661 / 1000
+        n += 414
+    )
+    while (n >= 540) do (
+        # exp(0.540) = 1.716007
+        mult := mult * 1716 / 1000
+        n -= 540
+    )
+
+    #val := 1 + n + n**2 / 2 + n**3 / 6 + n**4 / 24
+    val := 1000 + n + n^2 / 2000 + n^3 / 6000000 + (n^3 / 1000) * n / 24000000
+    return(val * mult / 1000 + 1)
+end
+
+
+
+# Pass attribute (range 0-999) and amount*1000
+# amount = 2:  0.001 -> 0.002  0.1 -> 0.19  0.5 -> 0.75  0.9 -> 0.95
+script, scaleattribute, attr, amount1000, begin
+    variable(temp1, temp2)
+
+    temp1 := attr * amount1000 / 1000
+
+    temp2 := 1000 -- (1000 -- attr) * 1000 / amount1000
+
+    if (amount1000 > 1 000) then (
+        #temp15 := attr + 
+
+        # Don't allow large increases
+        return(small(temp1, temp2))
+    ) else (
+        # Don't allow large decreases
+        return(large(temp1, temp2))
+    )
+
+    tracevalue(temp1, temp2)
+end
+
+plotscript, test_scaleattribute, begin
+    tracevalue(scaleattribute(0 001, 2 000))
+    tracevalue(scaleattribute(0 100, 2 000))
+    tracevalue(scaleattribute(0 499, 2 000))
+    tracevalue(scaleattribute(0 500, 2 000))
+    tracevalue(scaleattribute(0 501, 2 000))
+    tracevalue(scaleattribute(0 900, 2 000))
+    tracevalue(scaleattribute(0 990, 2 000))
+
+    tracevalue(scaleattribute(0 001, 0 500))
+    tracevalue(scaleattribute(0 100, 0 500))
+    tracevalue(scaleattribute(0 499, 0 500))
+    tracevalue(scaleattribute(0 500, 0 500))
+    tracevalue(scaleattribute(0 501, 0 500))
+    tracevalue(scaleattribute(0 666, 0 500))
+    tracevalue(scaleattribute(0 750, 0 500))
+    tracevalue(scaleattribute(0 900, 0 500))
+    tracevalue(scaleattribute(0 990, 0 500))
+
+
+    tracevalue(scaleattribute(0 001, 0 500))
+    tracevalue(scaleattribute(0 100, 0 500))
+    tracevalue(scaleattribute(0 200, 0 500))
+    tracevalue(scaleattribute(0 300, 0 500))
+    tracevalue(scaleattribute(0 400, 0 500))
+    tracevalue(scaleattribute(0 500, 0 500))
+    tracevalue(scaleattribute(0 600, 0 500))
+    tracevalue(scaleattribute(0 700, 0 500))
+    tracevalue(scaleattribute(0 800, 0 500))
+    tracevalue(scaleattribute(0 900, 0 500))
+    tracevalue(scaleattribute(0 999, 0 500))
+
+
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 001, 0 250), 2 000), 2 000))
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 100, 0 250), 2 000), 2 000))
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 200, 0 250), 2 000), 2 000))
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 300, 0 250), 2 000), 2 000))
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 400, 0 250), 2 000), 2 000))
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 500, 0 250), 2 000), 2 000))
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 600, 0 250), 2 000), 2 000))
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 700, 0 250), 2 000), 2 000))
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 800, 0 250), 2 000), 2 000))
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 900, 0 250), 2 000), 2 000))
+    tracevalue(scaleattribute(scaleattribute(scaleattribute(0 999, 0 250), 2 000), 2 000))
+
+end

@@ -1,0 +1,9 @@
+
+player gold
+player iron
+player coal
+button:menu
+button:view
+tooltip
+menu:menu
+button:quit
