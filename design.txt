@@ -168,4 +168,15 @@ There should be a minimap.
 There is water and high mountain plateaus, but the rest is undecided/unimportant
 except for graphics. Could be largely desert.
 
+#########################################################
 
+ICHIRO Addendum:
+Story-wise, the island should be an island, colonized maybe a few years before game start,
+that several trading companies want to argue over (thus explaining pre-existing towns)
+
+Found a fractal-based continent maker on the internet. Will use that to generate several starting maps. 
+Starting with 32x32 but will change map size as gameplay demands.
+
+Building types: Banks, trade depots, worker housing, general store, luxury store, factories, refineries.
+
+Vehicle progression: Stagecoach, horseless carriage, train(?), airship (need to think this out a bit more)
