@@ -43,4 +43,5 @@ define constant, begin
 6,sli:tooltip
 7,sli:menu:menu
 8,sli:button:quit
+9,sli:button:end turn
 end
