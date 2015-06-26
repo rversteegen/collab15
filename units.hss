@@ -1,0 +1,19 @@
+define constant, begin
+    #0, dat:name        # duplicated in buildings.hss
+    #1, dat:description # duplicated in buildings.hss
+    #2, dat:coalCost    # duplicated in buildings.hss
+    #3, dat:steelCost   # duplicated in buildings.hss
+    #4, dat:goldCost    # duplicated in buildings.hss
+
+    0, unit:stagecoach
+end
+
+
+# Read a datum from the
+# id:     a unit:* constant
+# datnum:
+# If the datum is a string, a string ID is returned
+script, unit, id, datnum, begin
+    switch (id) do (
+    )
+end
