@@ -1,4 +1,5 @@
 include, misc.hss
+include, map.hss
 
 global variable, begin
 
@@ -26,6 +27,7 @@ global variable, begin
     300, playerGold
     301, playerCoal
     302, playerMatter
+    303, playerPop
 
     # player 1 (the opponent)
 end
@@ -128,7 +130,19 @@ script, showtext, boxnum, begin
 
 end
 
-############################### Main loop #####################################
+
+############################## End of Turn ####################################
+
+script, endTurn, begin
+    showtext(2)
+    playerGold += 1
+    playerCoal += 1
+    playerMatter += 1
+    playerPop += 1
+end
+
+
+################################## GUI ########################################
 
 script, settooltip, stringid, begin
     variable(sl)
@@ -181,7 +195,10 @@ script, controls, begin
         exitscript
     ) else if (active menu == sli:menu:menu) then (
         if (mouseclick(leftbutton)) then (
-            if (mouseIsOver(sli:button:quit)) then (
+            if (mouseIsOver(sli:button:end turn)) then (
+                closeActiveMenu
+                endTurn
+            ) else if (mouseIsOver(sli:button:quit)) then (
                 gameover
             ) else (
                 # clicking elsewhere closes the menu
@@ -192,7 +209,6 @@ script, controls, begin
         exitscript
     )
 
-    
 
 
     #### Mouse over
@@ -219,6 +235,10 @@ script, controls, begin
         if (mouseclick(leftbutton)) then (
             showtext(1)
         )
+    ) else (
+        if (mouseclick(rightbutton)) then (
+            placeroad(tilex, tiley, 0)
+        )
     )
 end
 
@@ -230,6 +250,8 @@ script, updateGUI, begin
     stringsprintf(0, $1="  %d", playerCoal)
     setslicetext(lookupslice(sli:playercoal), 0)
 end
+
+############################### Main loop #####################################
 
 script, mainloop, begin
     put slice (mousecursor, mouse pixel x, mouse pixel y)
@@ -290,7 +312,7 @@ plotscript, newgame, begin
     init
 
     while (true) do (
-        # A separate script, so that scripts can be reloaded without problems.
+        # A separate script, so that scripts can be reloaded (from F5 menu) without problems.
         mainloop
         wait
     )

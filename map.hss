@@ -1,0 +1,69 @@
+
+
+define constant, begin
+    1, maplayer:roads
+
+    # Tile ID of the sequence of road or rail tiles
+    96, tile:roadsStart
+    112, tile:railsStart
+
+    50, tile:city1
+
+    # This is temp
+    37, tile:factory
+end
+
+
+# Is there a road or rail tile here, or something that counts as one: a village, city, mine, etc
+# roadtype: either tile:roadsStart or tile:railsStart
+script, isRoadOrRail, x, y, roadtype, begin
+    variable(tile)
+    tile := readmapblock(x, y, maplayer:roads)
+    return ((tile >= roadtype && tile < roadtype + 16)
+            || tile == tile:city1
+            || tile == tile:city1 + 1
+            || tile == tile:city1 + 16
+            || tile == tile:city1 + 17
+            || tile == tile:factory
+            )
+end
+
+# Corrects the autotiling of a single road or rail tile
+# roadtype: either tile:roadsStart or tile:railsStart
+script, updateRoadOrRailTile, x, y, roadtype, begin
+    variable(tile)
+    tile := readmapblock(x, y, maplayer:roads)
+    if (not(tile >= roadtype && tile < roadtype + 16)) then (exitscript)
+    variable(bits)
+    # check the neighbours
+    bits += 1 * isRoadOrRail(x,      y -- 1, roadtype)
+    bits += 2 * isRoadOrRail(x + 1,  y,      roadtype)
+    bits += 4 * isRoadOrRail(x,      y + 1,  roadtype)
+    bits += 8 * isRoadOrRail(x -- 1, y,      roadtype)
+    writemapblock(x, y, roadtype + bits, maplayer:roads)
+end
+
+# roadtype: either tile:roadsStart or tile:railsStart
+script, placeRoadOrRail, x, y, roadtype, owner, begin
+    writemapblock(x, y, roadtype, maplayer:roads)   
+    updateRoadOrRailTile(x,      y,      roadtype)
+    updateRoadOrRailTile(x,      y -- 1, roadtype)
+    updateRoadOrRailTile(x + 1,  y,      roadtype)
+    updateRoadOrRailTile(x,      y + 1,  roadtype)
+    updateRoadOrRailTile(x -- 1, y,      roadtype)
+end
+
+# Puts a road tile on the map and links it to the neighbouring ones
+script, placeRoad, x, y, owner, begin
+    placeRoadOrRail(x, y, tile:roadsStart, owner)
+end
+
+# Puts a rail tile on the map and links it to the neighbouring ones
+script, placeRail, x, y, owner, begin
+    placeRoadOrRail(x, y, tile:railsStart, owner)
+end
+
+
+# x,y gives top-left corner
+script, placeCity, x, y, owner, begin
+end

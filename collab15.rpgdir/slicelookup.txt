@@ -7,3 +7,4 @@ button:view
 tooltip
 menu:menu
 button:quit
+button:end turn

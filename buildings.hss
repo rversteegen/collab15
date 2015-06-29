@@ -1,0 +1,34 @@
+define constant, begin
+    0, dat:name        # duplicated in units.hss
+    1, dat:description # duplicated in units.hss
+    2, dat:coalCost    # duplicated in units.hss
+    3, dat:steelCost   # duplicated in units.hss
+    4, dat:goldCost    # duplicated in units.hss
+    #5, dat:sprite      # ... not needed?
+
+
+    0, unit:stagecoach
+end
+
+
+# Read a datum from the
+# id:     a building:* constant
+# datnum: a dat:* constant
+# If the datum is a string, a string ID is returned
+script, buildingData, id, datnum, begin
+    switch (id) do (
+        case(unit:stagecoach)
+            switch (datnum) do (
+                case(dat:name)        return($0="Stagecoach")
+                case(dat:description) return($0="Horse-drawn carriages")
+                case(dat:coalCost)    return(0)
+                case(dat:steelCost)   return(0)
+                case(dat:goldCost)    return(1)
+            )
+    )
+end
+
+# Setup the slice collection showing the menu of buildings built in a city
+script, showBuildings, town, begin
+    loadslicecollection(3)
+end
