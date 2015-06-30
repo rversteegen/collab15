@@ -1,0 +1,12 @@
+OHRRPGCE wip 20150625.7318 gfx_directx+sdl+fb/music_sdl FreeBASIC 0.23.0 (08-14-2011) Win32 32-bit
+Runtime info: gfx_directx "gfx_Initialize()...
+Adapter: Intel(R) HD Graphics Family
+Driver: igdumdim32.dll
+IDirect3DDevice9 object created as hardware device.
+D3DXSaveSurfaceToFile() successfully loaded.
+Joysticks supported."  music_sdl, SDL 1.2.15, SDL_Mixer 1.2.12 (22050Hz, Music decoders:WAVE,MIKMOD,NATIVEMIDI,OGG,MP3 Sample decoders:WAVE,AIFF,VOC,OGG)  Windows 6.2.9200 (8/Server 2012) 
+Playing game C:\Users\MatthiasH\Documents\GitHub\collab15\collab15.rpgdir ( ) 06-30-2015 01:53:48
+Spawned from Custom (OHRRPGCE wip 20150625 r7318)
+Could not open C:\Users\MatthiasH\AppData\Roaming\OHRRPGCE\collab15\gameconfig.ini
+Ignore ohrrpgce20150630015347.218.tmp because we are using it
+cleaningup C:\Users\MatthiasH\AppData\Roaming\OHRRPGCE\working.tmp\ and C:\Users\MATTHI~1\AppData\Local\Temp\ohrrpgce20150630015347.218.tmp\

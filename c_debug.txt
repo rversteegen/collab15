@@ -1,0 +1,17 @@
+OHRRPGCE wip 20150625.7318 gfx_directx+sdl+fb/music_sdl FreeBASIC 0.23.0 (08-14-2011) Win32 32-bit
+Runtime info: gfx_directx "gfx_Initialize()...
+Adapter: Intel(R) HD Graphics Family
+Driver: igdumdim32.dll
+IDirect3DDevice9 object created as hardware device.
+D3DXSaveSurfaceToFile() successfully loaded.
+Joysticks supported."  music_sdl, SDL 1.2.15, SDL_Mixer 1.2.12  Windows 6.2.9200 (8/Server 2012) 
+Editing game C:\Users\MatthiasH\Documents\GitHub\collab15\collab15.rpgdir ( ) 06-30-2015 01:49:22
+Full game data upgrade...
+fix_record_count: C:\Users\MatthiasH\AppData\Roaming\OHRRPGCE\working.tmp\\menus.bin has no records! (Adjusting record count from 1 -> 1)
+music_sdl, SDL 1.2.15, SDL_Mixer 1.2.12 (22050Hz, Music decoders:WAVE,MIKMOD,NATIVEMIDI,OGG,MP3 Sample decoders:WAVE,AIFF,VOC,OGG)
+Successfully opened IPC channel \\.\pipe\ohrrpgce_lump_updates_testing_67642
+Channel connection received (after 85ms)
+channel_write error (closing) (wrote 0 of 15): The pipe is being closed.
+
+warning: leaked sprite 10000000 with 9 references
+sprite_empty_cache: corruption: sprcacheB_used=0 items=1
